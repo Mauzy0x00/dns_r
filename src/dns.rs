@@ -1,4 +1,13 @@
 
+
+
+
+pub struct DnsPacket {
+    header: DnsHeader,
+    question: QuestionSection,
+    answer: AnswerSection,
+}
+
 #[derive(Debug)]
 pub struct DnsHeader {
                                         /*   https://www.rfc-editor.org/rfc/rfc1035#section-4.1.1   */
@@ -88,14 +97,14 @@ impl DnsHeader {
 /// The question section has a simpler format than the resource record format used in the other sections. Each question record (there is usually just one in the section)
 pub struct QuestionSection {
     // The domain name is broken into discrete labels which are concatenated; each label is prefixed by the length of that label
-    pub name: String,          // The domain name, encoded as a sequence of labels
-    pub record_type: u16,      // 2 byte integer that defines the record type : Type of RR (A, AAAA, MX, TXT, etc.)
-    pub record_class: u16,     // 2 byte integer that defines the record class
+    pub resource_record: ResourceRecord,
 }   
 
 impl QuestionSection {
     pub fn new() -> QuestionSection {
-        QuestionSection { name: String::new(), record_type: 1, record_class: 1}
+        QuestionSection { 
+            resource_record: ResourceRecord::new()
+            }
     }
     
     /// Given standard URL, Separate by '.' ; Get the length of the first label; place length in hex to the front; get length of second label (TDL); replace with length in hex; append null byte.
@@ -103,7 +112,7 @@ impl QuestionSection {
     pub fn to_label_sequence(&self) -> String {
 
         // <length><content>
-        let domain_name = &self.name;
+        let domain_name = &self.resource_record.name;
         let split_domain_name: Vec<&str> = domain_name.split('.').collect();
 
         let mut label_sequence = String::new();
@@ -126,32 +135,32 @@ impl QuestionSection {
     /// Convert each field of the QuestionSection struct to a Big Endian byte vector
     pub fn serialize_to_bytes(&self) -> Vec<u8> {
 
-        let capacity = self.name.len() + 32;    // Capacity is the length of the name + the 4 bytes of the record_type and record_class field 
+        let capacity = self.resource_record.name.len() + 32;    // Capacity is the length of the name + the 4 bytes of the record_type and record_class field 
 
         let mut buffer_vec: Vec<u8> = Vec::with_capacity(capacity);
 
         // Clone the name (which at this point should be a label) and convert it to bytes
-        let name = self.name.clone();
+        let name = self.resource_record.name.clone();
         let mut name_bytes = name.into_bytes();
 
         buffer_vec.append(&mut name_bytes);
     
         // Append remaining header fields
-        buffer_vec.extend_from_slice(&self.record_type.to_be_bytes());
-        buffer_vec.extend_from_slice(&self.record_class.to_be_bytes());
+        buffer_vec.extend_from_slice(&self.resource_record.record_type.to_be_bytes());
+        buffer_vec.extend_from_slice(&self.resource_record.class.to_be_bytes());
 
         buffer_vec
     }
 }
 
-struct ResourceRecord {
+pub struct ResourceRecord {
                             /*   https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records   */
-    name: String,               // [Variable size] Name of the node to which this record pertains
-    record_type: RecordType,    // 2 byte 	Type of resource record in numeric form (e.g., 15 for MX RRs)
-    class: u16,                 // 2 byte   class code
-    ttl: u32,                   // 4 byte   Count of seconds that the RR stays valid (The maximum is 231−1, which is about 68 years)
-    record_data_length: u16,    // 2 byte   Length of RDATA field (specified in octets)
-    record_data: Vec<u8>,        // [Variable size] Additonal resource record specific data
+    pub name: String,               // [Variable size] Name of the node to which this record pertains
+    pub record_type: u16,           // 2 byte 	Type of resource record in numeric form (e.g., 15 for MX RRs)
+    pub class: u16,                 // 2 byte   class code
+    pub ttl: u32,                   // 4 byte   Count of seconds that the RR stays valid (The maximum is 231−1, which is about 68 years)
+    pub record_data_length: u16,    // 2 byte   Length of RDATA field (specified in octets)
+    pub record_data: Vec<u8>,        // [Variable size] Additonal resource record specific data
 }
 
 impl ResourceRecord {
@@ -159,7 +168,7 @@ impl ResourceRecord {
     pub fn new() -> ResourceRecord {
         ResourceRecord { 
             name: String::new(), 
-            record_type: RecordType::A, 
+            record_type: 1, 
             class: 0, 
             ttl: 0, 
             record_data_length: 0, 
@@ -167,53 +176,6 @@ impl ResourceRecord {
         }
     }
 }
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u16)] // Specify the underlying integer type
-pub enum RecordType {
-    A = 1,     // 1 a host address
-    Ns = 2,    // 2 an authoritative name server
-    Md = 3,    // 3 a mail destination (Obsolete - use MX)
-    Mf = 4,    // 4 a mail forwarder (Obsolete - use MX)
-    Cname = 5, // 5 the canonical name for an alias
-    Soa = 6,   // 6 marks the start of a zone of authority
-    Mb = 7,    // 7 a mailbox domain name (EXPERIMENTAL)
-    Mg = 8,    // 8 a mail group member (EXPERIMENTAL)
-    Mr = 9,    // 9 a mail rename domain name (EXPERIMENTAL)
-    Null = 10,  // 10 a null RR (EXPERIMENTAL)
-    Wks = 11,   // 11 a well known service description
-    Ptr = 12,   // 12 a domain name pointer
-    Hinfo = 13, // 13 host information
-    Minfo = 14, // 14 mailbox or mail list information
-    Mx = 15,    // 15 mail exchange
-    Txt = 16,   // 16 text strings
-}
-
-impl RecordType {
-    pub fn from_u16(value: u16) -> Option<Self> {
-        match value {
-            1 => Some(RecordType::A),
-            2 => Some(RecordType::Ns),
-            3 => Some(RecordType::Md),
-            4 => Some(RecordType::Mf),
-            5 => Some(RecordType::Cname),
-            6 => Some(RecordType::Soa),
-            7 => Some(RecordType::Mb),
-            8 => Some(RecordType::Mg),
-            9 => Some(RecordType::Mr),
-            10 => Some(RecordType::Null),
-            11 => Some(RecordType::Wks),
-            12 => Some(RecordType::Ptr),
-            13 => Some(RecordType::Hinfo),
-            14 => Some(RecordType::Minfo),
-            15 => Some(RecordType::Mx),
-            16 => Some(RecordType::Txt),
-            _ => None,
-        }
-    }
-}
-
 
 pub struct AnswerSection {
     name: String,

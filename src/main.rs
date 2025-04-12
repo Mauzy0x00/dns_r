@@ -34,12 +34,12 @@ fn main() -> std::io::Result<()> {
 
 
     // Add the domain name to the name field and convert it to a label sequence
-    question.name = domain_name.to_string();
-    question.name = question.to_label_sequence();
-    question.record_type = 1;
-    question.record_class = 1;
+    question.resource_record.name = domain_name.to_string();
+    question.resource_record.name = question.to_label_sequence();
+    question.resource_record.record_type = 1;
+    question.resource_record.class = 1;
 
-    println!("Question name label: {}", question.name);
+    println!("Question name label: {}", question.resource_record.name);
 
     // Serialize the data and send to the client
     let mut serialized_response = default_response.serialize_to_bytes();
