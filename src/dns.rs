@@ -97,10 +97,11 @@ impl QuestionSection {
     pub fn new() -> QuestionSection {
         QuestionSection { name: String::new(), record_type: 1, record_class: 1}
     }
-
+    
+    /// Given standard URL, Separate by '.' ; Get the length of the first label; place length in hex to the front; get length of second label (TDL); replace with length in hex; append null byte.
+    /// example: google.com becomes: \x06google\x03com\x00
     pub fn to_label_sequence(&self) -> String {
 
-        // Separate domain name by '.' ; Get length of the first label; place length in hex to the front; get length of second label (TDL); replace with length in hex; append null byte
         // <length><content>
         let domain_name = &self.name;
         let split_domain_name: Vec<&str> = domain_name.split('.').collect();
@@ -167,44 +168,48 @@ impl ResourceRecord {
     }
 }
 
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u16)] // Specify the underlying integer type
 pub enum RecordType {
-    A,               //1 a host address
-    NS,              //2 an authoritative name server
-    MD,              //3 a mail destination (Obsolete - use MX)
-    MF,              // 4 a mail forwarder (Obsolete - use MX)
-    CNAME,           // 5 the canonical name for an alias
-    SOA,             // 6 marks the start of a zone of authority
-    MB,              // 7 a mailbox domain name (EXPERIMENTAL)
-    MG,              // 8 a mail group member (EXPERIMENTAL)
-    MR,              // 9 a mail rename domain name (EXPERIMENTAL)
-    NULL,            // 10 a null RR (EXPERIMENTAL)
-    WKS,             // 11 a well known service description
-    PTR,             // 12 a domain name pointer
-    HINFO,           // 13 host information
-    MINFO,           // 14 mailbox or mail list information
-    MX,              // 15 mail exchange
-    TXT,             // 16 text strings
+    A = 1,     // 1 a host address
+    Ns = 2,    // 2 an authoritative name server
+    Md = 3,    // 3 a mail destination (Obsolete - use MX)
+    Mf = 4,    // 4 a mail forwarder (Obsolete - use MX)
+    Cname = 5, // 5 the canonical name for an alias
+    Soa = 6,   // 6 marks the start of a zone of authority
+    Mb = 7,    // 7 a mailbox domain name (EXPERIMENTAL)
+    Mg = 8,    // 8 a mail group member (EXPERIMENTAL)
+    Mr = 9,    // 9 a mail rename domain name (EXPERIMENTAL)
+    Null = 10,  // 10 a null RR (EXPERIMENTAL)
+    Wks = 11,   // 11 a well known service description
+    Ptr = 12,   // 12 a domain name pointer
+    Hinfo = 13, // 13 host information
+    Minfo = 14, // 14 mailbox or mail list information
+    Mx = 15,    // 15 mail exchange
+    Txt = 16,   // 16 text strings
 }
+
 impl RecordType {
-    pub fn to_u16(&self) -> u16 {
-        match self {
-            RecordType::A => 1,
-            RecordType::NS => 2,
-            RecordType::MD => 3,
-            RecordType::MF => 4,
-            RecordType::CNAME => 5,
-            RecordType::SOA => 6,
-            RecordType::MB => 7,
-            RecordType::MG => 8,
-            RecordType::MR => 9,
-            RecordType::NULL => 10,
-            RecordType::WKS => 11,
-            RecordType::PTR => 12,
-            RecordType::HINFO => 13,
-            RecordType::MINFO => 14,
-            RecordType::MX => 15,
-            RecordType::TXT => 16,
+    pub fn from_u16(value: u16) -> Option<Self> {
+        match value {
+            1 => Some(RecordType::A),
+            2 => Some(RecordType::Ns),
+            3 => Some(RecordType::Md),
+            4 => Some(RecordType::Mf),
+            5 => Some(RecordType::Cname),
+            6 => Some(RecordType::Soa),
+            7 => Some(RecordType::Mb),
+            8 => Some(RecordType::Mg),
+            9 => Some(RecordType::Mr),
+            10 => Some(RecordType::Null),
+            11 => Some(RecordType::Wks),
+            12 => Some(RecordType::Ptr),
+            13 => Some(RecordType::Hinfo),
+            14 => Some(RecordType::Minfo),
+            15 => Some(RecordType::Mx),
+            16 => Some(RecordType::Txt),
+            _ => None,
         }
     }
 }
