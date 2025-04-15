@@ -31,7 +31,7 @@ fn main() -> std::io::Result<()> {
     // Setup question section
     let domain_name = "google.com";
     let mut question = QuestionSection::new();
-
+    let mut answer = AnswerSection::new();
 
     // Add the domain name to the name field and convert it to a label sequence
     question.resource_record.name = domain_name.to_string();

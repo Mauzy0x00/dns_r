@@ -37,7 +37,7 @@ impl DnsHeader {
 
     pub fn new() -> DnsHeader {
         DnsHeader {
-            id: 0x00,                          
+            id: 0,                          
     
             query_indicator: false,              
             opcode: 0,                         
@@ -164,24 +164,32 @@ pub struct ResourceRecord {
 }
 
 impl ResourceRecord {
-
     pub fn new() -> ResourceRecord {
         ResourceRecord { 
             name: String::new(), 
             record_type: 1, 
-            class: 0, 
-            ttl: 0, 
-            record_data_length: 0, 
+            class: 1, 
+            ttl: 60, 
+            record_data_length: 4, 
             record_data: Vec::new()
         }
+    }
+    /// Encode RR data to 4 byte big endian (8.8.8.8 => \x08\x08\x08\x08)
+    pub fn encode(&self) -> Vec<u8>{
+        let encoded_vec: Vec<u8> = Vec::new();
+
+        encoded_vec
     }
 }
 
 pub struct AnswerSection {
-    name: String,
-    record_type: u16,
-    class: u16,
-    ttl: u32,
-    length: u16,
-    data: String,
+    pub resource_record: ResourceRecord,
+}
+
+impl AnswerSection {
+    pub fn new() -> AnswerSection {
+        AnswerSection { 
+            resource_record: ResourceRecord::new(),
+        }
+    }
 }
